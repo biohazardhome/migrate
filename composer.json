@@ -1,0 +1,29 @@
+{
+    "name": "biohazard/migrate",
+    "version": "dev-master",
+    "description": "Visual migration generator for Laravel",
+    "keywords": ["gui migration laravel", "migration", "laravel", "migration laravel", "laravel scheme", "gui migration", "gui scheme", "ui migration", "ui scheme"],
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Migrate\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "biohazardhome",
+            "email": "biohazardhome@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Migrate\\MigrationGeneratorServiceProvider"
+            ]
+        }
+    }
+}
