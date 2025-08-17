@@ -1,7 +1,7 @@
 <p align="center"><strong>Визуальный конструктор миграций баз данных для Laravel</strong> </p>
 <div align="center"> <a href="#features">Особенности</a> • <a href="#requirements">Требования</a> • <a href="#installation">Установка</a> • <a href="#usage">Использование</a> • <a href="#contributing">Вклад в проект</a> • <a href="#license">Лицензия</a> </div>
 <h2 id="about">🚀 О проекте</h2>
-<p>Laravel Migration Generator - это мощный инструмент с графическим интерфейсом для быстрого создания миграций баз данных в Laravel. Проект позволяет визуально проектировать структуру таблиц без написания кода и генерирует готовый PHP-код миграций.</p>
+<p>Laravel Migrate Generator - это мощный инструмент с графическим интерфейсом для быстрого создания миграций баз данных в Laravel. Проект позволяет визуально проектировать структуру таблиц без написания кода и генерирует готовый PHP-код миграций.</p>
 <h2 id="features">✨ Особенности</h2>
 <ul>
 	<li>📝 Визуальное проектирование структуры таблиц</li>
@@ -25,20 +25,15 @@
 		<td>10.x+</td>
 	</tr>
 	<tr>
-		<td>Node.js</td>
-		<td>18.x+</td>
-	</tr>
-	<tr>
 		<td>MySQL</td>
 		<td>8.0+</td>
 	</tr>
 </table>
 <h2 id="installation">🚀 Установка</h2>
 <ol>
-	<li>Клонируйте репозиторий: <pre><code>git clone https://github.com/yourusername/laravel-migration-generator.git cd laravel-migration-generator</code></pre> </li>
-	<li>Установите зависимости: <pre><code>composer install npm install</code></pre> </li>
+	<li>Клонируйте репозиторий: <pre><code>git clone https://github.com/yourusername/migrate.git cd migrate</code></pre> </li>
+	<li>Установите зависимости: <pre><code>composer install</code></pre> </li>
 	<li>Настройте окружение: <pre><code>cp .env.example .env php artisan key:generate</code></pre> </li>
-	<li>Соберите фронтенд: <pre><code>npm run build</code></pre> </li>
 	<li>Запустите сервер: <pre><code>php artisan serve</code></pre> </li>
 </ol>
 <h2 id="usage">🖥 Использование</h2>
@@ -62,21 +57,33 @@
 	</div>
 </div>
 <h3>Пример сгенерированного кода</h3> <pre><code class="language-php">
-public function up() {
-  Schema::create('products', function (Blueprint $table) { 
-    $table->id(); 
-    $table->string('name', 255); 
-    $table->text('description');
-    $table->decimal('price', 8, 2); 
-  
-    $table->foreignId('category_id') 
-      ->constrained()
-      ->onDelete('cascade');
-    $table->timestamps();
-  
-    $table->index('name', 'products_name_index', 'hash');
-    $table->fullText('description');
-});
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class CreatetestTable extends Migration
+{
+	public function up() {
+	  Schema::create('products', function (Blueprint $table) { 
+	    $table->id(); 
+	    $table->string('name', 255); 
+	    $table->text('description');
+	    $table->decimal('price', 8, 2); 
+	  
+	    $table->foreignId('category_id') 
+	      ->constrained()
+	      ->onDelete('cascade');
+	    $table->timestamps();
+	  
+	    $table->index('name', 'products_name_index', 'hash');
+	    $table->fullText('description');
+		});
+	}
+
+	public function down()
+  {
+    Schema::dropIfExists('products');
+  }
 }</code></pre>
 <h2 id="contributing">🤝 Вклад в проект</h2>
 <p>Мы приветствуем вклад в проект! Порядок действий:</p>
