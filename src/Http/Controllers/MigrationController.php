@@ -47,7 +47,7 @@ class MigrationController extends Controller
 
     public function create()
     {
-        return view('migrations.create');
+        return view('migrate::create');
     }
 
     public function store(Request $request)
@@ -61,17 +61,25 @@ class MigrationController extends Controller
             'charset' => 'string|alpha_dash|max:255',
             'collation' => 'string|max:255',
             'timestamps' => 'nullable|boolean',
+            'softDeletes' => 'nullable|boolean',
+            'temporary' => 'nullable|boolean',
+            'comment' => 'nullable',
             
             'fields' => 'required|array|min:1',
             'fields.*.name' => 'sometimes|required|string|alpha_dash|max:255',
-            'fields.*.type' => 'required|string|in:id,string,text,integer,bigInteger,float,double,decimal,boolean,date,dateTime,time,timestamp,json',
-            'fields.*.length' => 'nullable|numeric|min:1',
-            'fields.*.nullable' => 'nullable|boolean',
-            'fields.*.default' => 'nullable|string|max:255',
-            'fields.*.unsigned' => 'nullable|boolean',
-            'fields.*.auto_increment' => 'nullable|boolean',
+            'fields.*.type' => 'required|string',
+            'fields.*.value' => 'nullable|numeric|min:1',
+            // 'fields.*.nullable' => 'nullable|boolean',
+            // 'fields.*.default' => 'nullable|string|max:255',
+            // 'fields.*.unsigned' => 'nullable|boolean',
+            // 'fields.*.auto_increment' => 'nullable|boolean',
             'fields.*.primary' => 'nullable|boolean',
-            'fields.*.modifiers.*.' => 'string|alpha_dash|max:255',
+            'fields.*.index' => 'nullable|boolean',
+            'fields.*.unique' => 'nullable|boolean',
+            'fields.*.fullText' => 'nullable|boolean',
+            'fields.*.spatialIndex' => 'nullable|boolean',
+            
+            'modifiers' => 'nullable|array',
 
             // 'indexes.*.type' => 'nullable',
             'indexes.*.name' => 'nullable',
@@ -104,8 +112,11 @@ class MigrationController extends Controller
         $charset = $request->input('charset');
         $collation = $request->input('collation');
         $timestamps = $request->input('timestamps');
+        $softDeletes = $request->input('softDeletes');
+        $temporary = $request->input('temporary');
+        $comment = $request->input('comment');
         $modifiers = $request->input('modifiers');
-        $modifiersValue = $request->input('modifiers-value');
+        // $modifiersValue = $request->input('modifiers-value');
         $indexes = $request->input('indexes');
         // dd($indexes);
         // dd($request->all());
@@ -119,11 +130,26 @@ class MigrationController extends Controller
         $fileName = date('Y_m_d_His') . '_' . $migrationName . '.php';
         // Генерация содержимого миграции
         $stub = file_get_contents(resource_path('stubs/migration.create.stub'));
+        $stub = str_replace('{{className}}', ucfirst($tableName), $stub);
         $stub = str_replace('{{table}}', $tableName, $stub);
+        $typeStub = $type == 'update' ? 'table' : $type;
+        $stub = str_replace('{{type}}', $typeStub, $stub);
         $columns = [];
         foreach ($fields as $field) {
             if (isset($field['name'])) {
-                $column = '$table->' . $field['type'] . '(\'' . $field['name'] . '\')';
+
+                if (in_array($field['type'], ['string', 'char', 'decimal']) && isset($field['value'])) {
+                    if (in_array($field['type'], ['string', 'char'])) {
+                        // $column .= '->length(' . $field['value'] . ')';
+                        $column = '$table->'. $field['type'] .'(\''. $field['name'] .'\', '. $field['value'] .')';
+                    } else if ($field['type'] === 'decimal') {
+                        [$total, $places] = array_map(function($item) { return trim($item); }, explode(',', $field['value'])); // 8, 2
+                        // dump($total, $places);
+                        $column = '$table->decimal(\'' . $field['name'] . '\', '. $total .', '. $places .')';
+                    }
+                } else {
+                    $column = '$table->' . $field['type'] . '(\'' . $field['name'] . '\')';
+                }
             } else {
                 $column = '$table->' . $field['type'] . '()';
             }
@@ -143,16 +169,8 @@ class MigrationController extends Controller
                     // dd();
             }
 
-            if (in_array($field['type'], ['string', 'char', 'decimal']) && isset($field['length'])) {
-                if (in_array($field['type'], ['string', 'char'])) {
-                    $column .= '->length(' . $field['length'] . ')';
-                } else if ($field['type'] === 'decimal') {
-                    [$total, $places] = array_map(function($item) { return trim($item); }, explode(',', $field['length'])); // 8, 2
-                    // dump($total, $places);
-                    $column = '$table->decimal(\'' . $field['name'] . '\', '. $total .', '. $places .')';
-                }
-            }
-            if (isset($field['nullable']) && $field['nullable']) {
+            
+            /*if (isset($field['nullable']) && $field['nullable']) {
                 $column .= '->nullable()';
             }
             if (isset($field['default']) && $field['default'] !== '') {
@@ -163,9 +181,21 @@ class MigrationController extends Controller
             }
             if (isset($field['auto_increment']) && $field['auto_increment']) {
                 $column .= '->autoIncrement()';
-            }
+            }*/
             if (isset($field['primary']) && $field['primary']) {
                 $column .= '->primary()';
+            }
+            if (isset($field['index']) && $field['index']) {
+                $column .= '->index()';
+            }
+            if (isset($field['unique']) && $field['unique']) {
+                $column .= '->unique()';
+            }
+            if (isset($field['fullText']) && $field['fullText']) {
+                $column .= '->fullText()';
+            }
+            if (isset($field['spatialIndex']) && $field['spatialIndex']) {
+                $column .= '->spatialIndex()';
             }
             $column .= ';';
             $columns[] = $column;
@@ -182,7 +212,7 @@ class MigrationController extends Controller
         $columnsCode .= $foreignKeysCode;
 
         // dd($columnsCode);
-        $parametrsCode = $this->parametrs(compact('engine', 'charset', 'collation', 'timestamps'));
+        $parametrsCode = $this->parametrs(compact('engine', 'charset', 'collation', 'timestamps', 'softDeletes', 'temporary', 'comment'));
         $columnsCode .= $parametrsCode;
         $stub = str_replace('{{columns}}', $columnsCode, $stub);
         // Сохраняем файл миграции
@@ -197,7 +227,7 @@ class MigrationController extends Controller
         return response()->json([
             'success' => true,
             'path' => $path,
-            'stub' => $stub,
+            'stub' => htmlspecialchars($stub),
         ]);
     }
 
@@ -220,6 +250,18 @@ class MigrationController extends Controller
 
         if ($timestamps) {
             $parametrs .= "\n            ".'$table->timestamps();';
+        }
+
+        if ($softDeletes) {
+            $parametrs .= "\n            ".'$table->softDeletes();';
+        }
+
+        if ($temporary) {
+            $parametrs .= "\n            ".'$table->temporary();';
+        }
+
+        if ($comment) {
+            $parametrs .= "\n            ".'$table->comment(\''. $comment .'\');';
         }
 
         if ($parametrs) {

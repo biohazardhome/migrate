@@ -13,7 +13,7 @@ Route::group([
     Route::post('/store', [MigrationController::class, 'store'])
          ->name('migrate.store');
 
-    Route::get('/api/tables', [MigrationController::class, 'getTables']);
-    Route::get('/api/tables/{table}/columns', [MigrationController::class, 'getTableColumns']);
+    Route::get('/tables', [MigrationController::class, 'getTables']);
+    Route::get('/tables/{table}/columns', [MigrationController::class, 'getTableColumns']);
 
 });

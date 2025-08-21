@@ -2,8 +2,11 @@
 <html>
 <head>
     <title>Создать миграцию</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+
     <link rel="stylesheet" href="https://unpkg.com/vue-multiselect@2.1.6/dist/vue-multiselect.min.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q" crossorigin="anonymous"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -21,6 +24,8 @@
             @{{ error }}
             </div>
         </div>
+
+        
 
         <form @submit.prevent="submitForm" method="POST" action="{{ route('migrate.store') }}">
             @csrf
@@ -45,7 +50,7 @@
             </div>
 
             <h4>Настройки</h4>
-            <!--<div class="card-body">-->
+            <!-- <div class="card-body"> -->
                 <div class="row">
                     <div class="col-md-3">
                         <label class="form-label">Engine
@@ -82,7 +87,8 @@
                                     <option 
                                         v-for="collation, key in collations" 
                                         :value="collation" 
-                                        :key="key">
+                                        :key="key"
+                                        :selected="collation == 'utf8mb4_unicode_ci'">
                                             @{{ collation }}
                                     </option>
                                 </optgroup>
@@ -93,6 +99,12 @@
                     <div class="col-md-3">
                         <label class="form-label">Timestamps
                             <input class="form-check-input" type="checkbox" name="timestamps" value="1">
+                        </label>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">softDeletes
+                            <input class="form-check-input" type="checkbox" name="softDeletes" value="1">
                         </label>
                     </div>
 
@@ -108,409 +120,493 @@
                         </label>
                     </div>
                 </div>
-            <!--</div>-->
+            <!-- </div> -->
+
+            <ul class="nav nav-tabs mb-4" id="migrationTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="fields-tab" data-bs-toggle="tab" data-bs-target="#fields" type="button" role="tab">Поля</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="indexes-tab" data-bs-toggle="tab" data-bs-target="#indexes" type="button" role="tab">Индексы</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="foreign-keys-tab" data-bs-toggle="tab" data-bs-target="#foreign-keys" type="button" role="tab">Внешние ключи</button>
+                </li>
+            </ul>
             
-            <h4>Поля</h4>
-            <div class="mb-3">
-                <button type="button" class="btn btn-sm btn-primary" @click="addField">Добавить поле</button>
-            </div>
-            <div v-for="(field, index) in fields" :key="index" class="card mb-3">
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Имя поля</label>
-                            <input type="text" class="field-name form-control" v-model="field.name" :name="'fields[' + index + '][name]'" required :disabled="false">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Тип</label>
-                            <select class="form-select" v-model="selectedValue[index]" :name="'fields[' + index + '][type]'" @change="typeSelect">
-                                <optgroup label="Булевы типы">
-                                    <option value="boolean">Boolean</option>
-                                </optgroup>
-                                <optgroup label="Строки и текст">
-                                    <option value="char">char</option>
-                                    <option value="longText">LongText</option>
-                                    <option value="mediumText">MediumText</option>
-                                    <option value="string">String</option>
-                                    <option value="text">Text</option>
-                                    <option value="tinyText">TinyText</option>
-                                </optgroup>
-                                <optgroup label="Числовые типы">
-                                    <option value="bigIncrements">bigIncrements</option>
-                                    <option value="bigInteger">Big Integer</option>
-                                    <option value="decimal">Decimal</option>
-                                    <option value="double">Double</option>
-                                    <option value="float">Float</option>
-                                    <option value="id">ID</option>
-                                    <option value="increments">increments</option>
-                                    <option value="integer">Integer</option>
-                                    <option value="mediumIncrements">mediumIncrements</option>
-                                    <option value="mediumInteger">mediumInteger</option>
-                                    <option value="smallIncrements">smallIncrements</option>
-                                    <option value="smallInteger">smallInteger</option>
-                                    <option value="tinyIncrements">tinyIncrements</option>
-                                    <option value="tinyInteger">tinyInteger</option>
-                                    <option value="unsignedBigInteger">unsignedBigInteger</option>
-                                    <option value="unsignedInteger">unsignedInteger</option>
-                                    <option value="unsignedMediumInteger">unsignedMediumInteger</option>
-                                    <option value="unsignedTinyInteger">unsignedTinyInteger</option>
-                                </optgroup>
-                                <optgroup label="Типы даты и времени">
-                                    <option value="dateTime">DateTime</option>
-                                    <option value="date">Date</option>
-                                    <option value="time">Time</option>
-                                    <option value="timestamp">Timestamp</option>
-                                
-                                </optgroup>
-                                <optgroup label="Двоичные типы">
-                                    <option value="binary">binary</option>
-                                </optgroup>
-                                <optgroup label="Типы объектов и Json">
-                                    <option value="json">JSON</option>
-                                </optgroup>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Длина (если нужно)</label>
-                            <input type="number" class="field-length form-control" v-model="field.length" :name="'fields[' + index + '][length]'">
-                        </div>
-
-
+            <div class="tab-content" id="migrationTabsContent">
+                <div class="tab-pane fade show active" id="fields" role="tabpanel">
+                    {{-- <h4>Поля</h4> --}}
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-sm btn-primary" @click="addField">Добавить поле</button>
                     </div>
-                    
-                    <div class="modifiers row mb-3">
-                        <div class="mb-3">
-                            <button type="button" class="btn btn-sm btn-primary" @click="addModifier(index)">Добавить модификатор</button>
-                        </div>
-
-                        <draggable v-model="modifiers[index]" draggable=".modifier" item-key="id" @start="drag=true" @end="drag=false">
-                        <div v-for="(modifier, modifierIndex) in modifiers[index]" :key="modifier.id" class="modifier mb-3">
+                    <div v-for="(field, index) in fields" :key="index" class="card mb-3">
+                        <div class="card-body">
                             <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Имя поля</label>
+                                    <input type="text" class="field-name form-control" v-model="field.name" :name="'fields[' + index + '][name]'" required :disabled="field.type == 'id'">
+                                </div>
                                 <div class="col-md-3">
-                                    <label class="form-label">Модификаторы</label>
-                                    <select class="modifiers form-select" v-model="modifier.name" :name="'fields[' + index + '][modifiers]['+ modifierIndex +'][modifier]'" @change="modifiersChange(modifier, index, modifierIndex)">
-                                        <option value="after">after</option>
-                                        <option value="change">change</option>
-                                        <option value="autoIncrement">autoIncrement</option>
-                                        <option value="charset">charset</option>
-                                        <option value="collation">collation</option>
-                                        <option value="comment">comment</option>
-                                        <option value="default">default</option>
-                                        <option value="first">first</option>
-                                        <option value="from">from</option>
-                                        <option value="invisible">invisible</option>
-                                        <option value="nullable">nullable</option>
-                                        <option value="storedAs">storedAs</option>
-                                        <option value="unsigned">unsigned</option>
-                                        <option value="useCurrent">useCurrent</option>
-                                        <option value="useCurrentOnUpdate">useCurrentOnUpdate</option>
-                                        <option value="virtualAs">virtualAs</option>
-                                        <option value="generatedAs">generatedAs</option>
-                                        <option value="always">always</option>
+                                    <label class="form-label">Тип</label>
+                                    <select class="form-select" v-model="field.type" :name="'fields[' + index + '][type]'" @change="typeSelect">
+                                        <optgroup label="Булевы типы">
+                                            <option value="boolean">Boolean</option>
+                                        </optgroup>
+                                        <optgroup label="Строки и текст">
+                                            <option value="char">char</option>
+                                            <option value="longText">LongText</option>
+                                            <option value="mediumText">MediumText</option>
+                                            <option value="string">String</option>
+                                            <option value="text">Text</option>
+                                            <option value="tinyText">TinyText</option>
+                                        </optgroup>
+                                        <optgroup label="Числовые типы">
+                                            <option value="bigIncrements">bigIncrements</option>
+                                            <option value="bigInteger">Big Integer</option>
+                                            <option value="decimal">Decimal</option>
+                                            <option value="double">Double</option>
+                                            <option value="float">Float</option>
+                                            <option value="id">ID</option>
+                                            <option value="increments">increments</option>
+                                            <option value="integer">Integer</option>
+                                            <option value="mediumIncrements">mediumIncrements</option>
+                                            <option value="mediumInteger">mediumInteger</option>
+                                            <option value="smallIncrements">smallIncrements</option>
+                                            <option value="smallInteger">smallInteger</option>
+                                            <option value="tinyIncrements">tinyIncrements</option>
+                                            <option value="tinyInteger">tinyInteger</option>
+                                            <option value="unsignedBigInteger">unsignedBigInteger</option>
+                                            <option value="unsignedInteger">unsignedInteger</option>
+                                            <option value="unsignedMediumInteger">unsignedMediumInteger</option>
+                                            <option value="unsignedTinyInteger">unsignedTinyInteger</option>
+                                        </optgroup>
+                                        <optgroup label="Типы даты и времени">
+                                            <option value="dateTime">DateTime</option>
+                                            <option value="date">Date</option>
+                                            <option value="time">Time</option>
+                                            <option value="timestamp">Timestamp</option>
+                                        
+                                        </optgroup>
+                                        <optgroup label="Двоичные типы">
+                                            <option value="binary">binary</option>
+                                        </optgroup>
+                                        <optgroup label="Типы объектов и Json">
+                                            <option value="json">JSON</option>
+                                            <option value="jsonb">jsonb</option>
+                                        </optgroup>
+                                        <optgroup label="Типы UUID и ULID">
+                                            <option value="ulid">ulid</option>
+                                            <option value="ulidMorphs">ulidMorphs</option>
+                                            <option value="uuid">uuid</option>
+                                            <option value="uuidMorphs">uuidMorphs</option>
+                                            <option value="nullableUlidMorphs">nullableUlidMorphs</option>
+                                            <option value="nullableUuidMorphs">nullableUuidMorphs</option>
+                                        </optgroup>
+                                        <optgroup label="Пространственные типы">
+                                            <option value="geography">geography</option>
+                                            <option value="geometry">geometry</option>
+                                        </optgroup>
+                                        <optgroup label="Типы отношений">
+                                            <option value="foreignId">foreignId</option>
+                                            <option value="foreignIdFor">foreignIdFor</option>
+                                            <option value="foreignUlid">foreignUlid</option>
+                                            <option value="foreignUuid">foreignUuid</option>
+                                            <option value="morphs">morphs</option>
+                                            <option value="nullableMorphs">nullableMorphs</option>
+                                        </optgroup>
+                                        <optgroup label="Специальные типы">
+                                            <option value="enum">enum</option>
+                                            <option value="set">set</option>
+                                            <option value="macAddress">macAddress</option>
+                                            <option value="ipAddress">ipAddress</option>
+                                            <option value="rememberToken">rememberToken</option>
+                                            <option value="vector">vector</option>
+                                        </optgroup>
                                     </select>
                                 </div>
-
-                                <div class="col-md-3">
-                                    <label class="form-label">Значение модификатора</label>
-                                    <input v-if="!(modifiersTypeOne + modifiersTypeSelect).includes(modifier.name)" class="modifiers-value form-control" type="text" :name="'fields[' + index + '][modifiers]['+ modifierIndex +'][value]'">
-
-                                    <select v-if="modifiersTypeSelect.includes(modifier.name)" class="modifiers-value-select form-select" v-model="modifier.value" :name="'fields[' + index + '][modifiers]['+ modifierIndex +'][value]'" v-bind:data-field-index="index" v-bind:data-modifier-index="modifierIndex">
-                                        <template v-if="modifier.name === 'collation'">
-                                            <optgroup v-for="collations, name in modifier.selectValue" :label="name">
-                                                <option v-for="collation, key in collations" :value="collation" :key="key">@{{ collation }}</option>
-                                            </optgroup>
-                                        </template>
-                                        <template v-else>
-                                            <option v-for="value, key in modifier.selectValue" :value="value" :key="key">@{{ value }}</option>
-                                        </template>
-                                    </select>
+                                <div class="col-md-2">
+                                    <label class="form-label">Значение</label>
+                                    <template v-if="['enum', 'set'].includes(field.type)">
+                                        <input type="text" class="form-control" v-model="field.value" :name="'fields[' + index + '][value]'">
+                                    </template>
+                                    <template v-else-if="['binary', 'char', 'string', 'dateTime', 'dateTimeTz', 'decimal', 'float', 'timeTz', 'time', 'timestamp', 'timestampTz', 'vector'].includes(field.type)">
+                                        <input type="number" class="field-length form-control" v-model="field.value" :step="field.type === 'decimal' ? 0.1 : 1" :name="'fields[' + index + '][value]'">
+                                    </template>
                                 </div>
 
+
+                            </div>
+                            
+                            <div class="modifiers row mb-3">
+                                <div class="mb-3">
+                                    <button type="button" class="btn btn-sm btn-primary" @click="addModifier(index)">Добавить модификатор</button>
+                                </div>
+
+                                <draggable v-model="modifiers[index]" draggable=".modifier" item-key="id" @start="drag=true" @end="drag=false">
+                                <div v-for="(modifier, modifierIndex) in modifiers[index]" :key="modifier.id" class="modifier mb-3">
+                                    <div class="row mb-3">
+                                        <div class="col-md-3">
+                                            <label class="form-label">Модификаторы</label>
+                                            <select class="modifiers form-select" v-model="modifier.name" :name="'fields[' + index + '][modifiers]['+ modifierIndex +'][modifier]'" @change="modifiersChange(modifier, index, modifierIndex)">
+                                                <option value="after">after</option>
+                                                <option value="change">change</option>
+                                                <option value="autoIncrement">autoIncrement</option>
+                                                <option value="charset">charset</option>
+                                                <option value="collation">collation</option>
+                                                <option value="comment">comment</option>
+                                                <option value="default">default</option>
+                                                <option value="first">first</option>
+                                                <option value="from">from</option>
+                                                <option value="invisible">invisible</option>
+                                                <option value="nullable">nullable</option>
+                                                <option value="storedAs">storedAs</option>
+                                                <option value="unsigned">unsigned</option>
+                                                <option value="useCurrent">useCurrent</option>
+                                                <option value="useCurrentOnUpdate">useCurrentOnUpdate</option>
+                                                <option value="virtualAs">virtualAs</option>
+                                                <option value="generatedAs">generatedAs</option>
+                                                <option value="always">always</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-3">
+                                            <label class="form-label">Значение модификатора</label>
+                                            <input v-if="!(modifiersTypeOne + modifiersTypeSelect).includes(modifier.name)" class="modifiers-value form-control" type="text" :name="'fields[' + index + '][modifiers]['+ modifierIndex +'][value]'">
+
+                                            <select v-if="modifiersTypeSelect.includes(modifier.name)" class="modifiers-value-select form-select" v-model="modifier.value" :name="'fields[' + index + '][modifiers]['+ modifierIndex +'][value]'" v-bind:data-field-index="index" v-bind:data-modifier-index="modifierIndex">
+                                                <template v-if="modifier.name === 'collation'">
+                                                    <optgroup v-for="collations, name in modifier.selectValue" :label="name">
+                                                        <option v-for="collation, key in collations" :value="collation" :key="key">@{{ collation }}</option>
+                                                    </optgroup>
+                                                </template>
+                                                <template v-else>
+                                                    <option v-for="value, key in modifier.selectValue" :value="value" :key="key">@{{ value }}</option>
+                                                </template>
+                                            </select>
+                                        </div>
+
+                                        
+
+                                        <div class="col-md-3 mt-3">
+                                            <button type="button" class="btn btn-sm btn-danger" @click="removeModifier(index, modifierIndex)">Удалить</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                </draggable>
+                            </div>
+
+                            {{-- <div class="col-md-3">
+                                <label class="form-label">Методы</label>
+                                <select class="form-select" name="methods">
+                                    <option value="after">after</option>
+                                </select>
+                            </div> --}}
+
+                            <h4>Индексы для колонки</h4>
+                            <div class="row mt-3">
+                                <div class="col-md-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" 
+                                               v-model="field.primary" 
+                                               :name="'fields[' + index + '][primary]'" 
+                                               :id="'primary-'+index" 
+                                               value="1"
+                                               :checked="field.primary"
+                                               @change="updatePrimaryKey(field, index)">
+                                        <label class="form-check-label" :for="'primary-'+index">
+                                            Primary
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" 
+                                               v-model="field.index" 
+                                               :name="'fields[' + index + '][index]'" 
+                                               :id="'index-'+index" 
+                                               value="1"
+                                               :checked="field.index"
+                                               @change="updateIndexKey(field, index)">
+                                        <label class="form-check-label" :for="'index-'+index">
+                                            Index
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" 
+                                               v-model="field.unique" 
+                                               :name="'fields[' + index + '][unique]'" 
+                                               :id="'unique-'+index" 
+                                               value="1"
+                                               :checked="field.unique"
+                                               @change="updateUniqueKey(field, index)">
+                                        <label class="form-check-label" :for="'unique-'+index">
+                                            Unique
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" 
+                                               v-model="field.fullText" 
+                                               :name="'fields[' + index + '][fullText]'" 
+                                               :id="'fullText-'+index" 
+                                               value="1"
+                                               :checked="field.fullText"
+                                               @change="updateFullTextKey(field, index)">
+                                        <label class="form-check-label" :for="'fullText-'+index">
+                                            FullText
+                                        </label>
+                                    </div>
+                                </div>
                                 
+                                <div class="col-md-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" 
+                                               v-model="field.spatialIndex" 
+                                               :name="'fields[' + index + '][spatialIndex]'" 
+                                               :id="'spatialIndex-'+index" 
+                                               value="1"
+                                               :checked="field.spatialIndex"
+                                               @change="updateSpatialIndexKey(field, index)">
+                                        <label class="form-check-label" :for="'spatialIndex-'+index">
+                                            SpatialIndex
+                                        </label>
+                                    </div>
+                                </div>
 
-                                <div class="col-md-3 mt-3">
-                                    <button type="button" class="btn btn-sm btn-danger" @click="removeModifier(index, modifierIndex)">Удалить</button>
+
+                            </div>
+        <!-- 
+                            <div class="row mt-3">
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" v-model="field.nullable" :name="'fields[' + index + '][nullable]'" id="'nullable-'+index" value="1">
+                                        <label class="form-check-label" :for="'nullable-'+index">
+                                            Nullable
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" v-model="field.unsigned" :name="'fields[' + index + '][unsigned]'" id="'unsigned-'+index" value="1">
+                                        <label class="form-check-label" :for="'unsigned-'+index">
+                                            Unsigned
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" v-model="field.auto_increment" :name="'fields[' + index + '][auto_increment]'" id="'auto_increment-'+index" value="1">
+                                        <label class="form-check-label" :for="'auto_increment-'+index">
+                                            Auto Increment
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Значение по умолчанию</label>
+                                    <input type="text" class="form-control" v-model="field.default" :name="'fields[' + index + '][default]'">
+                                </div>
+                            </div> -->
+                            <div class="mt-3">
+                                <button type="button" class="btn btn-sm btn-danger" @click="removeField(index)">Удалить</button>
+                                <button type="button" class="btn btn-sm btn-primary" @click="cloneField(index)">Клонировать</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    </div>
+
+                    <div class="tab-pane fade" id="indexes" role="tabpanel">
+                    <h4 class="mt-4">Индексы</h4>
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-sm btn-primary" @click="addIndex">Добавить индекс</button>
+                    </div>
+
+                    <div v-for="(index, indexIndex) in indexes" :key="index.id" class="card mb-3">
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Тип индекса</label>
+                                    <select class="form-select" v-model="index.type" :name="'indexes[' + indexIndex + '][type]'">
+                                        <option value="index">Обычный индекс</option>
+                                        <option value="unique">Уникальный индекс</option>
+                                        <option value="primary" :disabled="indexes.some(idx => (idx.type === 'primary'))">Первичный ключ</option>
+                                        <option value="fulltext">Fulltext индекс</option>
+                                        <option value="spatial">Spatial индекс</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <label class="form-label">Имя индекса (необязательно)</label>
+                                    <input type="text" class="form-control" v-model="index.name" 
+                                           :name="'indexes[' + indexIndex + '][name]'" 
+                                           placeholder="Автоматически сгенерируется">
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <label class="form-label">Алгоритм</label>
+                                    <select class="form-select" v-model="index.algorithm" :name="'indexes[' + indexIndex + '][algorithm]'">
+                                        <option value="">По умолчанию</option>
+                                        <option value="btree">B-Tree</option>
+                                        <option value="hash">Hash</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-8">
+                                    <label class="form-label">Поля для индекса</label>
+                                    <multiselect 
+                                        v-model="index.columns"
+                                        :options="availableFields()"
+                                        :multiple="true"
+                                        :close-on-select="false"
+                                        placeholder="Выберите поля"
+                                        label="name"
+                                        track-by="name"
+
+                                    ></multiselect>
+                                    <input type="hidden" v-for="(col, colIndex) in index.columns" 
+                                           :name="'indexes[' + indexIndex + '][columns][' + colIndex + ']'"
+                                           :value="col.name" required>
+                                </div>
+                                
+                                <div class="col-md-4 d-flex align-items-end">
+                                    <button type="button" class="btn btn-sm btn-danger ms-auto" 
+                                            @click="removeIndex(indexIndex)">
+                                        Удалить индекс
+                                    </button>
                                 </div>
                             </div>
                         </div>
-                        </draggable>
+                    </div>
                     </div>
 
-                    <div class="col-md-3">
-                        <label class="form-label">Методы</label>
-                        <select class="form-select" name="methods">
-                            <option value="after">after</option>
-                        </select>
+                    <div class="tab-pane fade" id="foreign-keys" role="tabpanel">
+                    <h4 class="mt-4">Внешние ключи</h4>
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-sm btn-primary" @click="addForeignKey">Добавить внешний ключ</button>
                     </div>
 
-                    <h4>Индексы для колонки</h4>
-                    <div class="row mt-3">
-                        <div class="col-md-2">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" 
-                                       v-model="field.primary" 
-                                       :name="'fields[' + index + '][primary]'" 
-                                       :id="'primary-'+index" 
-                                       value="1"
-                                       :checked="field.primary"
-                                       @change="updatePrimaryKey(field, index)">
-                                <label class="form-check-label" :for="'primary-'+index">
-                                    Primary
-                                </label>
+                    <div v-for="(fk, fkIndex) in foreignKeys" :key="fk.id" class="card mb-3">
+                        <div class="card-body">
+                            <div class="col-md-12">
+                                <label class="form-label">Реальные таблицы</label>
+                                <input :checked="true" class="form-check-input" type="checkbox">
                             </div>
-                        </div>
 
-                        <div class="col-md-2">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" 
-                                       v-model="field.index" 
-                                       :name="'fields[' + index + '][index]'" 
-                                       :id="'index-'+index" 
-                                       value="1"
-                                       :checked="field.index"
-                                       @change="updateIndexKey(field, index)">
-                                <label class="form-check-label" :for="'index-'+index">
-                                    Index
-                                </label>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Имя ключа (опционально)</label>
+                                    <input type="text" class="form-control" v-model="fk.name" 
+                                           :name="`foreignKeys[${fkIndex}][name]`">
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <label class="form-label">Колонка</label>
+                                    <select class="form-select" v-model="fk.column" 
+                                            :name="`foreignKeys[${fkIndex}][column]`" required>
+                                        <option v-for="field in fields" :value="field.name" :key="field.name">
+                                            @{{ field.name }}
+                                        </option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <label class="form-label">Ссылающаяся таблица</label>
+                                    <select class="form-select" v-model="fk.referenceTable" 
+                                            :name="`foreignKeys[${fkIndex}][referenceTable]`" required>
+                                        <option v-for="table in availableTables" :value="table" :key="table">
+                                            @{{ table }}
+                                        </option>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
-
-                        <div class="col-md-2">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" 
-                                       v-model="field.unique" 
-                                       :name="'fields[' + index + '][unique]'" 
-                                       :id="'unique-'+index" 
-                                       value="1"
-                                       :checked="field.unique"
-                                       @change="updateUniqueKey(field, index)">
-                                <label class="form-check-label" :for="'unique-'+index">
-                                    Unique
-                                </label>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Ссылающаяся колонка</label>
+                                    <select class="form-select" v-model="fk.referenceColumn" 
+                                            :name="`foreignKeys[${fkIndex}][referenceColumn]`" required>
+                                        <option v-if="fk.referenceTable" 
+                                                v-for="column in getTableColumns(fk.referenceTable)" 
+                                                :value="column" :key="column">
+                                            @{{ column }}
+                                        </option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <label class="form-label">On Delete</label>
+                                    <select class="form-select" v-model="fk.onDelete" 
+                                            :name="`foreignKeys[${fkIndex}][onDelete]`">
+                                        <option value="RESTRICT">RESTRICT</option>
+                                        <option value="CASCADE">CASCADE</option>
+                                        <option value="SET NULL">SET NULL</option>
+                                        <option value="NO ACTION">NO ACTION</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <label class="form-label">On Update</label>
+                                    <select class="form-select" v-model="fk.onUpdate" 
+                                            :name="`foreignKeys[${fkIndex}][onUpdate]`">
+                                        <option value="RESTRICT">RESTRICT</option>
+                                        <option value="CASCADE">CASCADE</option>
+                                        <option value="SET NULL">SET NULL</option>
+                                        <option value="NO ACTION">NO ACTION</option>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
-
-                        <div class="col-md-2">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" 
-                                       v-model="field.fullText" 
-                                       :name="'fields[' + index + '][fullText]'" 
-                                       :id="'fullText-'+index" 
-                                       value="1"
-                                       :checked="field.fullText"
-                                       @change="updateFullTextKey(field, index)">
-                                <label class="form-check-label" :for="'fullText-'+index">
-                                    FullText
-                                </label>
+                            
+                            <div class="row">
+                                <div class="col-md-12 text-end">
+                                    <button type="button" class="btn btn-sm btn-danger" 
+                                            @click="removeForeignKey(fkIndex)">
+                                        Удалить
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                        
-                        <div class="col-md-2">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" 
-                                       v-model="field.spatialIndex" 
-                                       :name="'fields[' + index + '][spatialIndex]'" 
-                                       :id="'spatialIndex-'+index" 
-                                       value="1"
-                                       :checked="field.spatialIndex"
-                                       @change="updateSpatialIndexKey(field, index)">
-                                <label class="form-check-label" :for="'spatialIndex-'+index">
-                                    SpatialIndex
-                                </label>
-                            </div>
-                        </div>
-
-
-                    </div>
-<!-- 
-                    <div class="row mt-3">
-                        <div class="col-md-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" v-model="field.nullable" :name="'fields[' + index + '][nullable]'" id="'nullable-'+index" value="1">
-                                <label class="form-check-label" :for="'nullable-'+index">
-                                    Nullable
-                                </label>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" v-model="field.unsigned" :name="'fields[' + index + '][unsigned]'" id="'unsigned-'+index" value="1">
-                                <label class="form-check-label" :for="'unsigned-'+index">
-                                    Unsigned
-                                </label>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" v-model="field.auto_increment" :name="'fields[' + index + '][auto_increment]'" id="'auto_increment-'+index" value="1">
-                                <label class="form-check-label" :for="'auto_increment-'+index">
-                                    Auto Increment
-                                </label>
-                            </div>
-                        </div>
-                        
-                    </div>
-                    <div class="row mt-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Значение по умолчанию</label>
-                            <input type="text" class="form-control" v-model="field.default" :name="'fields[' + index + '][default]'">
-                        </div>
-                    </div> -->
-                    <div class="mt-3">
-                        <button type="button" class="btn btn-sm btn-danger" @click="removeField(index)">Удалить</button>
-                    </div>
-                </div>
-            </div>
-
-            <h4 class="mt-4">Индексы</h4>
-            <div class="mb-3">
-                <button type="button" class="btn btn-sm btn-primary" @click="addIndex">Добавить индекс</button>
-            </div>
-
-            <div v-for="(index, indexIndex) in indexes" :key="index.id" class="card mb-3">
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Тип индекса</label>
-                            <select class="form-select" v-model="index.type" :name="'indexes[' + indexIndex + '][type]'">
-                                <option value="index">Обычный индекс</option>
-                                <option value="unique">Уникальный индекс</option>
-                                <option value="primary" :disabled="indexes.some(idx => (idx.type === 'primary'))">Первичный ключ</option>
-                                <option value="fulltext">Fulltext индекс</option>
-                                <option value="spatial">Spatial индекс</option>
-                            </select>
-                        </div>
-                        
-                        <div class="col-md-4">
-                            <label class="form-label">Имя индекса (необязательно)</label>
-                            <input type="text" class="form-control" v-model="index.name" 
-                                   :name="'indexes[' + indexIndex + '][name]'" 
-                                   placeholder="Автоматически сгенерируется">
-                        </div>
-                        
-                        <div class="col-md-4">
-                            <label class="form-label">Алгоритм</label>
-                            <select class="form-select" v-model="index.algorithm" :name="'indexes[' + indexIndex + '][algorithm]'">
-                                <option value="">По умолчанию</option>
-                                <option value="btree">B-Tree</option>
-                                <option value="hash">Hash</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-8">
-                            <label class="form-label">Поля для индекса</label>
-                            <multiselect 
-                                v-model="index.columns"
-                                :options="availableFields()"
-                                :multiple="true"
-                                :close-on-select="false"
-                                placeholder="Выберите поля"
-                                label="name"
-                                track-by="name"
-
-                            ></multiselect>
-                            <input type="hidden" v-for="(col, colIndex) in index.columns" 
-                                   :name="'indexes[' + indexIndex + '][columns][' + colIndex + ']'"
-                                   :value="col.name" required>
-                        </div>
-                        
-                        <div class="col-md-4 d-flex align-items-end">
-                            <button type="button" class="btn btn-sm btn-danger ms-auto" 
-                                    @click="removeIndex(indexIndex)">
-                                Удалить индекс
-                            </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <h4 class="mt-4">Внешние ключи</h4>
-            <div class="mb-3">
-                <button type="button" class="btn btn-sm btn-primary" @click="addForeignKey">Добавить внешний ключ</button>
-            </div>
-
-            <div v-for="(fk, fkIndex) in foreignKeys" :key="fk.id" class="card mb-3">
-                <div class="card-body">
-                    <div class="col-md-12">
-                        <label class="form-label">Реальные таблицы</label>
-                        <input :checked="true" class="form-check-input" type="checkbox">
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Имя ключа (опционально)</label>
-                            <input type="text" class="form-control" v-model="fk.name" 
-                                   :name="`foreignKeys[${fkIndex}][name]`">
-                        </div>
-                        
-                        <div class="col-md-4">
-                            <label class="form-label">Колонка</label>
-                            <select class="form-select" v-model="fk.column" 
-                                    :name="`foreignKeys[${fkIndex}][column]`" required>
-                                <option v-for="field in fields" :value="field.name" :key="field.name">
-                                    @{{ field.name }}
-                                </option>
-                            </select>
-                        </div>
-                        
-                        <div class="col-md-4">
-                            <label class="form-label">Ссылающаяся таблица</label>
-                            <select class="form-select" v-model="fk.referenceTable" 
-                                    :name="`foreignKeys[${fkIndex}][referenceTable]`" required>
-                                <option v-for="table in availableTables" :value="table" :key="table">
-                                    @{{ table }}
-                                </option>
-                            </select>
+            <div class="modal" id="myModal" tabindex="-1" >
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title">Modal title</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body" >
+                    <div v-if="errors.length">
+                        <h3>Ошибка</h3>
+                        <div v-for="error in errors">
+                            <div v-for="error in error" class="errors alert alert-danger">
+                            @{{ error }}
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Ссылающаяся колонка</label>
-                            <select class="form-select" v-model="fk.referenceColumn" 
-                                    :name="`foreignKeys[${fkIndex}][referenceColumn]`" required>
-                                <option v-if="fk.referenceTable" 
-                                        v-for="column in getTableColumns(fk.referenceTable)" 
-                                        :value="column" :key="column">
-                                    @{{ column }}
-                                </option>
-                            </select>
-                        </div>
-                        
-                        <div class="col-md-4">
-                            <label class="form-label">On Delete</label>
-                            <select class="form-select" v-model="fk.onDelete" 
-                                    :name="`foreignKeys[${fkIndex}][onDelete]`">
-                                <option value="RESTRICT">RESTRICT</option>
-                                <option value="CASCADE">CASCADE</option>
-                                <option value="SET NULL">SET NULL</option>
-                                <option value="NO ACTION">NO ACTION</option>
-                            </select>
-                        </div>
-                        
-                        <div class="col-md-4">
-                            <label class="form-label">On Update</label>
-                            <select class="form-select" v-model="fk.onUpdate" 
-                                    :name="`foreignKeys[${fkIndex}][onUpdate]`">
-                                <option value="RESTRICT">RESTRICT</option>
-                                <option value="CASCADE">CASCADE</option>
-                                <option value="SET NULL">SET NULL</option>
-                                <option value="NO ACTION">NO ACTION</option>
-                            </select>
-                        </div>
+                    <div v-else>
+                        <h3>Успешно создана миграция в файле</h3> 
+                        <div v-html="modalBody"></div>
                     </div>
-                    
-                    <div class="row">
-                        <div class="col-md-12 text-end">
-                            <button type="button" class="btn btn-sm btn-danger" 
-                                    @click="removeForeignKey(fkIndex)">
-                                Удалить
-                            </button>
-                        </div>
-                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                  </div>
                 </div>
+              </div>
             </div>
 
             <button type="submit" class="btn btn-primary">Создать миграцию</button>
@@ -943,7 +1039,7 @@
                 errors: {},
                 type: 'create',
                 fields: [
-                    { name: '', type: 'boolean', length: null, nullable: false, unsigned: false, auto_increment: false, primary: false, default: '' }
+                    { name: '', type: 'boolean', value: null, nullable: false, unsigned: false, auto_increment: false, primary: false, default: '' }
                 ],
                 fieldsName: [''],
                 selectedValue: ['boolean'],
@@ -974,11 +1070,13 @@
 
                 foreignKeys: [],
                 availableTables: [], // Список таблиц БД
-                tableColumns: {}     // Колонки таблиц: {table1: ['id', 'name'], ...}
+                tableColumns: {},     // Колонки таблиц: {table1: ['id', 'name'], ...}
+                modalBody: '',
+
             },
             methods: {
                 addField() {
-                    this.fields.push({ name: '', type: 'id', length: null, nullable: false, unsigned: false, auto_increment: false, primary: false, default: '' });
+                    this.fields.push({ name: '', type: 'id', value: null, nullable: false, unsigned: false, auto_increment: false, primary: false, default: '' });
                     
                     this.modifiers.push([]);
                 },
@@ -1084,7 +1182,7 @@
                 // Загрузка таблиц с сервера
                 async loadTables() {
                     try {
-                        const response = await axios.get('/api/tables');
+                        const response = await axios.get('/migrate/tables');
                         this.availableTables = response.data;
                     } catch (error) {
                         console.error('Ошибка загрузки таблиц:', error);
@@ -1097,7 +1195,7 @@
                     
                     if (!this.tableColumns[tableName]) {
                         try {
-                            const response = await axios.get(`/api/tables/${tableName}/columns`);
+                            const response = await axios.get(`/migrate/tables/${tableName}/columns`);
                             this.$set(this.tableColumns, tableName, response.data);
                         } catch (error) {
                             console.error(`Ошибка загрузки колонок для ${tableName}:`, error);
@@ -1112,14 +1210,17 @@
 
                 typeSelect(e) {
                     // console.log(e.target, e.target.closest('.card-body').querySelector('.field-name'));
-                    var parentEl = e.target.closest('.card-body');
-                    parentEl.querySelector('.field-name').disabled = false;
+                    /*var parentEl = e.target.closest('.card-body');
                     parentEl.querySelector('.field-length').step = 1;
-                    if (e.target.value == 'id') {
-                        parentEl.querySelector('.field-name').disabled = true;
-                    } else if (e.target.value == 'decimal') {
+                    if (e.target.value == 'decimal') {
                         parentEl.querySelector('.field-length').step = 0.1;
-                    }
+                    }*/
+                },
+                cloneField(index) {
+                    const field = JSON.parse(JSON.stringify(this.fields[index]));
+                    field.name = field.name + '_copy';
+                    this.fields.splice(index + 1, 0, field);
+                    this.modifiers.splice(index + 1, 0, JSON.parse(JSON.stringify(this.modifiers[index])));
                 },
                 modifiersChange(modifier, fieldIndex, modifierIndex) {
                     console.log(this.$el);/*
@@ -1189,17 +1290,22 @@
                     const form = e.target;
                     const formData = new FormData(form);
 
-                    axios.post('/migrations/store', formData)
+                    axios.post('/migrate/store', formData)
                         .then(response => {
                             if (response.data.success) {
                                 this.errors = {};
                                 // обработка успешного ответа
                                 // console.log(response.data);
+                                // document.querySelector('.modal').style.display = 'block';
+                                var myModal = new bootstrap.Modal(document.querySelector('.modal'));
+                                myModal.toggle();
+                                this.modalBody = response.data.path +'<br><pre><code style="white-space: pre;">'+ response.data.stub +'</code></pre>';
                             } else {
-                                // console.log(response);s
-                                // this.$forceUpdate();
                                 this.errors = response.data.errors;
                                 console.log(this.errors);
+
+                                document.querySelector('.modal').style.display = 'block';
+                                this.modalBody = '';
                             }
                         }).catch(error => {
                             // обработка ошибки
@@ -1253,6 +1359,17 @@
                 // ... остальная инициализация ...
             },
         });
+
+/*var triggerTabList = [].slice.call(document.querySelectorAll('#migrationTabs a'))
+triggerTabList.forEach(function (triggerEl) {
+  var tabTrigger = new bootstrap.Tab(triggerEl)
+
+  triggerEl.addEventListener('click', function (event) {
+    event.preventDefault()
+    tabTrigger.show()
+  })
+})*/
+
     </script>
 </body>
 </html>
